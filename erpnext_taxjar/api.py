@@ -99,9 +99,6 @@ def get_tax_data(doc):
 		'to_zip': shipping_address.pincode,
 		'to_city': shipping_address.city,
 		'to_state': shipping_address.state,
-		'from_country': 'US',
-		'from_zip': company_address.pincode,
-		'from_city': company_address.city,
 		'shipping': shipping,
 		'line_items': []
 	}

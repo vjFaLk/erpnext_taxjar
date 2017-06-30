@@ -14,7 +14,7 @@ def set_sales_tax(doc, method):
 
 	taxjar_settings = frappe.get_single("TaxJar Settings")	
 		
-	client, taxjar_settings = get_client()
+	client = get_client()
 	tax_dict = get_tax_data(doc)
 	taxdata = client.tax_for_order(tax_dict)
 

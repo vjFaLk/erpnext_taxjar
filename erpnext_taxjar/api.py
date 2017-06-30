@@ -3,6 +3,7 @@ import frappe
 import hashlib
 import json
 import taxjar
+import traceback
 from frappe.utils.background_jobs import enqueue
 
 
@@ -60,11 +61,14 @@ def create_transaction(doc, method):
 	tax_dict['transaction_id'] = doc.name
 	tax_dict['transaction_date'] = frappe.utils.today()
 	tax_dict['sales_tax'] = sales_tax
-	tax_dict['amount'] = doc.total + tax_dict['shipping']	
+	tax_dict['amount'] = doc.total + tax_dict['shipping']
 
 	print tax_dict
 
-	client.create_order(tax_dict)
+	try:
+		client.create_order(tax_dict)
+	except Exception as ex:
+		print(traceback.format_exc(ex))
 
 def delete_transaction(doc, method):
 	client = get_client()
@@ -107,10 +111,10 @@ def get_tax_data(doc):
 	for item in doc.items:
 		tax_dict["line_items"].append({
 			"id": index,
-			"description": item.item_name,
+			"description": item.item_name[:255],
 			"unit_price": item.price_list_rate,
 			"quantity": item.qty,
-			"discount": (item.discount_percentage / 100) * item.price_list_rate
+			"discount": (item.discount_percentage / 100) * item.price_list_rate * item.qty
 		})
 
 		index = index + 1

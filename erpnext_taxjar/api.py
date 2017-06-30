@@ -11,6 +11,8 @@ def get_client():
 	return client
 
 def set_sales_tax(doc, method):
+	if not doc.items:
+		return
 
 	taxjar_settings = frappe.get_single("TaxJar Settings")	
 		

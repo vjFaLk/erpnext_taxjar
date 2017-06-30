@@ -78,6 +78,7 @@ def get_tax_data(doc):
 	if not shipping_address.country == "United States":
 		return
 
+	shipping = 0
 	for tax in doc.taxes:
 		if tax.account_head == "Freight and Forwarding Charges - JA":
 			shipping = tax.tax_amount

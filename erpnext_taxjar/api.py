@@ -4,7 +4,6 @@ import hashlib
 import json
 import taxjar
 import traceback
-from frappe.utils.background_jobs import enqueue
 
 
 def get_client():
@@ -71,8 +70,6 @@ def create_transaction(doc, method):
 	tax_dict['sales_tax'] = sales_tax
 	tax_dict['amount'] = doc.total + tax_dict['shipping']
 
-	print tax_dict
-
 	try:
 		client.create_order(tax_dict)
 	except Exception as ex:
@@ -84,6 +81,7 @@ def delete_transaction(doc, method):
 
 
 def get_tax_data(doc):
+	from shipment_management.utils import get_state_code
 	taxjar_settings = frappe.get_single("TaxJar Settings")
 
 	client = get_client()
@@ -110,7 +108,7 @@ def get_tax_data(doc):
 		'to_country': 'US',
 		'to_zip': shipping_address.pincode,
 		'to_city': shipping_address.city,
-		'to_state': shipping_address.state,
+		'to_state': get_state_code(shipping_address),
 		'shipping': shipping,
 		'line_items': []
 	}

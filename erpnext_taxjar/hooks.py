@@ -23,6 +23,7 @@ doc_events = {
 		"validate" : "erpnext_taxjar.api.set_sales_tax"
 	},
     "Sales Invoice" : {
+		"validate" : "erpnext_taxjar.api.set_sales_tax",
 		"on_submit" : "erpnext_taxjar.api.create_transaction",
 		"on_cancel" : "erpnext_taxjar.api.delete_transaction"
 	}

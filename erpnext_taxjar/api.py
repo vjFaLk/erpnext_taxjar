@@ -15,7 +15,7 @@ def get_client():
 def set_sales_tax(doc, method):
 	if not doc.items:
 		return
-	
+
 	if frappe.db.get_value("Customer", doc.customer, "exempt_from_sales_tax"):
 		for tax in doc.taxes:
 			if tax.description == "Sales Tax":
@@ -23,7 +23,7 @@ def set_sales_tax(doc, method):
 				break
 		doc.run_method("calculate_taxes_and_totals")
 		return
-	
+
 	taxjar_settings = frappe.get_single("TaxJar Settings")
 
 	client = get_client()
@@ -51,6 +51,12 @@ def set_sales_tax(doc, method):
 
 
 def create_transaction(doc, method):
+
+	# Allow skipping creation of transaction for dev environment
+	# if taxjar_create_transactions isn't defined in site_config we assume
+	# we DO want to create transactions all the time.
+	if not frappe.local.conf.get("taxjar_create_transactions", 1):
+		return
 
 	client = get_client()
 	sales_tax = 0

@@ -1,7 +1,4 @@
-import requests
 import frappe
-import hashlib
-import json
 import taxjar
 import traceback
 

@@ -13,6 +13,9 @@ def set_sales_tax(doc, method):
 	if not doc.items:
 		return
 
+	if not frappe.local.conf.get("taxjar_calculate_tax", 1):
+		return
+
 	if frappe.db.get_value("Customer", doc.customer, "exempt_from_sales_tax"):
 		for tax in doc.taxes:
 			if tax.description == "Sales Tax":

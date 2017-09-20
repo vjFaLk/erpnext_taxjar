@@ -36,7 +36,7 @@ def set_sales_tax(doc, method):
 		taxdata = client.tax_for_order(tax_dict)
 	except:
 		return
-	
+
 	if "Sales Tax" in [tax.description for tax in doc.taxes]:
 		for tax in doc.taxes:
 			if tax.description == "Sales Tax":
@@ -100,7 +100,9 @@ def get_tax_data(doc):
 	client = taxjar.Client(api_key=taxjar_settings.get_password("api_key"))
 
 	company_address = frappe.get_doc("Address", {"is_your_company_address": 1})
-	if company_address and doc.shipping_address_name:
+	if company_address and not doc.shipping_address_name:
+		shipping_address = company_address
+	elif company_address and doc.shipping_address_name:
 		shipping_address = frappe.get_doc("Address", doc.shipping_address_name)
 	else:
 		return

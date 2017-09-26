@@ -30,6 +30,12 @@ def set_sales_tax(doc, method):
 	tax_dict = get_tax_data(doc)
 
 	if not tax_dict:
+		taxes_list = []
+		for tax in doc.taxes:
+			if tax.account_head != taxjar_settings.tax_account_head:
+				taxes_list.append(tax)
+				break
+		setattr(doc, "taxes", taxes_list)
 		return
 
 	try:

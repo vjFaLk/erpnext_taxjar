@@ -127,19 +127,6 @@ def get_tax_data(doc):
 		'to_city': shipping_address.city,
 		'to_state': get_state_code(shipping_address),
 		'shipping': shipping,
-		'line_items': []
+		'amount': doc.net_total
 	}
-
-	index = 1
-	for item in doc.items:
-		tax_dict["line_items"].append({
-			"id": index,
-			"description": item.item_name[:255],
-			"unit_price": item.price_list_rate,
-			"quantity": item.qty,
-			"discount": (item.discount_percentage / 100) * item.price_list_rate * item.qty
-		})
-
-		index = index + 1
-
 	return tax_dict

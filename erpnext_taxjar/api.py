@@ -1,11 +1,12 @@
 import frappe
 import taxjar
 import traceback
+from frappe.client import get_password
 
 
 def get_client():
-	taxjar_settings = frappe.get_single("TaxJar Settings")
-	client = taxjar.Client(api_key=taxjar_settings.get_password("api_key"))
+	api_key = get_password("TaxJar Settings", "TaxJar Settings", "api_key")
+	client = taxjar.Client(api_key=api_key)
 	return client
 
 
@@ -13,6 +14,9 @@ def set_sales_tax(doc, method):
 	if not doc.items:
 		return
 
+	# Allow skipping calculation of tax for dev environment
+	# if taxjar_calculate_tax isn't defined in site_config we assume
+	# we DO want to calculate tax all the time.
 	if not frappe.local.conf.get("taxjar_calculate_tax", 1):
 		return
 
@@ -24,7 +28,7 @@ def set_sales_tax(doc, method):
 		doc.run_method("calculate_taxes_and_totals")
 		return
 
-	taxjar_settings = frappe.get_single("TaxJar Settings")
+	tax_account_head = frappe.db.get_single_value("TaxJar Settings", "tax_account_head")
 
 	client = get_client()
 	tax_dict = get_tax_data(doc)
@@ -32,16 +36,13 @@ def set_sales_tax(doc, method):
 	if not tax_dict:
 		taxes_list = []
 		for tax in doc.taxes:
-			if tax.account_head != taxjar_settings.tax_account_head:
+			if tax.account_head != tax_account_head:
 				taxes_list.append(tax)
 				break
 		setattr(doc, "taxes", taxes_list)
 		return
 
-	try:
-		taxdata = client.tax_for_order(tax_dict)
-	except:
-		return
+	taxdata = client.tax_for_order(tax_dict)
 
 	if "Sales Tax" in [tax.description for tax in doc.taxes]:
 		for tax in doc.taxes:
@@ -52,7 +53,7 @@ def set_sales_tax(doc, method):
 		doc.append("taxes", {
 			"charge_type": "Actual",
 			"description": "Sales Tax",
-			"account_head": taxjar_settings.tax_account_head,
+			"account_head": tax_account_head,
 			"tax_amount": taxdata.amount_to_collect
 		})
 
@@ -105,7 +106,8 @@ def get_tax_data(doc):
 
 	client = taxjar.Client(api_key=taxjar_settings.get_password("api_key"))
 
-	company_address = frappe.get_doc("Address", {"is_your_company_address": 1})
+	company_address = frappe.get_list("Dynamic Link", filters = {"link_doctype" : "Company"}, fields=["parent"])[0]
+	company_address = frappe.get_doc("Address", company_address.parent)
 	if company_address and not doc.shipping_address_name:
 		shipping_address = company_address
 	elif company_address and doc.shipping_address_name:

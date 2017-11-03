@@ -1,11 +1,9 @@
 import frappe
 import taxjar
 import traceback
-from frappe.client import get_password
-
 
 def get_client():
-	api_key = get_password("TaxJar Settings", "TaxJar Settings", "api_key")
+	api_key = frappe.get_doc("TaxJar Settings", "TaxJar Settings").get_password("api_key")
 	client = taxjar.Client(api_key=api_key)
 	return client
 
@@ -107,7 +105,8 @@ def get_tax_data(doc):
 	if not (taxjar_settings.api_key or taxjar_settings.tax_account_head):
 		return
 
-	client = taxjar.Client(api_key=taxjar_settings.get_password("api_key"))
+	api_key = frappe.get_doc("TaxJar Settings", "TaxJar Settings").get_password("api_key")
+	client = taxjar.Client(api_key=api_key)
 
 	company_address = frappe.get_list("Dynamic Link", filters = {"link_doctype" : "Company"}, fields=["parent"])[0]
 	company_address = frappe.get_doc("Address", company_address.parent)

@@ -137,9 +137,7 @@ def get_tax_data(doc):
 		except LookupError:
 			error_message = """{} is not a valid state!
 							Check for typos or enter the
-							2-digit code for your state
-							found <a href="https://www.ups.com/worldshiphelp/WS16/ENU/AppHelp/Codes/State_Province_Codes.htm">
-							here</a>."""
+							2-letter ISO code for your state."""
 
 			frappe.throw(_(error_message.format(address_state)))
 			return

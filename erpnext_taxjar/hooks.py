@@ -26,7 +26,7 @@ doc_events = {
 	}
 }
 
-taxjar_api = [
+tax_api = [
 	"erpnext_taxjar.api.set_sales_tax"
 ]
 

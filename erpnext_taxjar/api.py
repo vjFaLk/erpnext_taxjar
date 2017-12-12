@@ -122,7 +122,7 @@ def get_tax_data(doc):
 	else:
 		return
 
-	if not shipping_address.country == "United States":
+	if shipping_address.country != "United States":
 		return
 
 	us_states = pycountry.subdivisions.get(country_code='US')
@@ -135,7 +135,7 @@ def get_tax_data(doc):
 		try:
 			state = pycountry.subdivisions.lookup(address_state)
 		except LookupError:
-			error_message = """{} is not a valid state!
+			error_message = """{} is not a valid US state!
 							Check for typos or enter the
 							2-letter ISO code for your state."""
 

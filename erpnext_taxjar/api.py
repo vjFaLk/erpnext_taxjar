@@ -141,9 +141,11 @@ def set_sales_tax(doc, method):
 	tax_account_head = frappe.db.get_single_value(
 		"TaxJar Settings", "tax_account_head")
 	tax_dict = get_tax_data(doc)
-	taxdata = validate_tax_request(doc, tax_dict)
+	taxdata = None
 
-	if not tax_dict:
+	if tax_dict:
+		taxdata = validate_tax_request(doc, tax_dict)
+	else:
 		taxes_list = []
 
 		for tax in doc.taxes:
@@ -153,26 +155,29 @@ def set_sales_tax(doc, method):
 		setattr(doc, "taxes", taxes_list)
 		return
 
-	if "Sales Tax" in [tax.description for tax in doc.taxes]:
-		for tax in doc.taxes:
-			if tax.description == "Sales Tax":
-				tax.tax_amount = taxdata.amount_to_collect
-				break
-	elif taxdata.amount_to_collect > 0:
-		doc.append("taxes", {
-			"charge_type": "Actual",
-			"description": "Sales Tax",
-			"account_head": tax_account_head,
-			"tax_amount": taxdata.amount_to_collect
-		})
+	if taxdata:
+		if "Sales Tax" in [tax.description for tax in doc.taxes]:
+			for tax in doc.taxes:
+				if tax.description == "Sales Tax":
+					tax.tax_amount = taxdata.amount_to_collect
+					break
+		elif taxdata.amount_to_collect > 0:
+			doc.append("taxes", {
+				"charge_type": "Actual",
+				"description": "Sales Tax",
+				"account_head": tax_account_head,
+				"tax_amount": taxdata.amount_to_collect
+			})
 
-		doc.run_method("calculate_taxes_and_totals")
+			doc.run_method("calculate_taxes_and_totals")
 
 
 def validate_address(doc, address):
 	tax_dict = get_tax_data(doc)
 
-	validate_tax_request(doc, tax_dict)
+	if tax_dict:
+		validate_tax_request(doc, tax_dict)
+
 	validate_state(address)
 
 

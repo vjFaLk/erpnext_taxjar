@@ -88,7 +88,8 @@ def get_tax_data(doc):
 			shipping = tax.tax_amount
 
 	shipping_state = validate_state(shipping_address)
-	country_code = frappe.get_value("Country", shipping_address.country, "code")
+	country_code = frappe.db.get_value("Country", shipping_address.country, "code")
+	country_code = country_code.upper()
 
 	tax_dict = {
 		'to_country': country_code,
@@ -138,8 +139,7 @@ def set_sales_tax(doc, method):
 		doc.run_method("calculate_taxes_and_totals")
 		return
 
-	tax_account_head = frappe.db.get_single_value(
-		"TaxJar Settings", "tax_account_head")
+	tax_account_head = frappe.db.get_single_value("TaxJar Settings", "tax_account_head")
 	tax_dict = get_tax_data(doc)
 	taxdata = None
 
@@ -193,12 +193,17 @@ def validate_tax_request(doc, tax_dict):
 
 
 def validate_state(address):
-	country_code = frappe.get_value("Country", address.get("country"), "code")
+	country_code = frappe.db.get_value("Country", address.get("country"), "code")
+	country_code = country_code.upper() # PyCountry expects the country's ISO code in uppercase
 
 	states = pycountry.subdivisions.get(country_code=country_code)
-	states = [state.code.split('-')[1] for state in states]
+	states = [state.code.split('-')[1] for state in states] # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
 	address_state = address.get("state")
 
+	# First try finding the state in PyCountry's database
+	# If it fails, try again by passing the string as is since
+	# PyCountry will accept the full state name,
+	# but expects the ISO code in the format of US-FL
 	if address_state in states:
 		shipping_state = address_state
 	else:

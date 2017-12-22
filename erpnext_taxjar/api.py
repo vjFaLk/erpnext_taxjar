@@ -210,9 +210,7 @@ def validate_state(address):
 		try:
 			lookup_state = pycountry.subdivisions.lookup(address_state)
 		except LookupError:
-			error_message = """{} is not a valid state!
-							Check for typos or enter the
-							ISO code for your state."""
+			error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
 
 			frappe.throw(_(error_message.format(address_state)))
 		else:

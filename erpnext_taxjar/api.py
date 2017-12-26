@@ -200,6 +200,9 @@ def validate_state(address):
 	states = [state.code.split('-')[1] for state in states] # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
 	address_state = address.get("state")
 
+	if address_state is not None:
+		address_state = address_state.upper()
+
 	# First try finding the state in PyCountry's database
 	# If it fails, try again by passing the string as is since
 	# PyCountry will accept the full state name,

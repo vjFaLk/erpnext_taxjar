@@ -141,10 +141,10 @@ def set_sales_tax(doc, method):
 
 	tax_account_head = frappe.db.get_single_value("TaxJar Settings", "tax_account_head")
 	tax_dict = get_tax_data(doc)
-	taxdata = None
+	tax_data = None
 
 	if tax_dict:
-		taxdata = validate_tax_request(doc, tax_dict)
+		tax_data = validate_tax_request(tax_dict)
 	else:
 		taxes_list = []
 
@@ -155,68 +155,70 @@ def set_sales_tax(doc, method):
 		setattr(doc, "taxes", taxes_list)
 		return
 
-	if taxdata:
-		if "Sales Tax" in [tax.description for tax in doc.taxes]:
-			for tax in doc.taxes:
-				if tax.description == "Sales Tax":
-					tax.tax_amount = taxdata.amount_to_collect
-					break
-		elif taxdata.amount_to_collect > 0:
+	if tax_data is not None and tax_data.amount_to_collect > 0:
+		# Loop through tax rows for existing Sales Tax entry
+		# If none are found, add a row with the tax amount
+		for tax in doc.taxes:
+			if tax.account_head == tax_account_head:
+				tax.tax_amount = tax_data.amount_to_collect
+
+				doc.run_method("calculate_taxes_and_totals")
+				break
+		else:
 			doc.append("taxes", {
 				"charge_type": "Actual",
 				"description": "Sales Tax",
 				"account_head": tax_account_head,
-				"tax_amount": taxdata.amount_to_collect
+				"tax_amount": tax_data.amount_to_collect
 			})
 
 			doc.run_method("calculate_taxes_and_totals")
 
 
 def validate_address(doc, address):
+	# Validate address using PyCountry
+	validate_state(address)
+
 	tax_dict = get_tax_data(doc)
 
 	if tax_dict:
-		validate_tax_request(doc, tax_dict)
+		# Validate address using TaxJar
+		validate_tax_request(tax_dict)
 
-	validate_state(address)
 
-
-def validate_tax_request(doc, tax_dict):
+def validate_tax_request(tax_dict):
 	client = get_client()
 
 	try:
-		taxdata = client.tax_for_order(tax_dict)
+		tax_data = client.tax_for_order(tax_dict)
 	except taxjar.exceptions.TaxJarResponseError as err:
 		frappe.throw(_(sanitize_error_response(err)))
 	else:
-		return taxdata
+		return tax_data
 
 
 def validate_state(address):
-	country_code = frappe.db.get_value("Country", address.get("country"), "code")
-	country_code = country_code.upper() # PyCountry expects the country's ISO code in uppercase
+	if not address.get("state"):
+		return
 
-	states = pycountry.subdivisions.get(country_code=country_code)
-	states = [state.code.split('-')[1] for state in states] # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
-	address_state = address.get("state")
+	address_state = address.get("state").upper()
 
-	if address_state is not None:
-		address_state = address_state.upper()
+	# Search the given state in PyCountry's database
+	try:
+		lookup_state = pycountry.subdivisions.lookup(address_state)
+	except LookupError:
+		# If search fails, try again if the given state is an ISO code
+		if len(address_state) in range(1, 4):
+			country_code = get_country_code(address.get("country"))
 
-	# First try finding the state in PyCountry's database
-	# If it fails, try again by passing the string as is since
-	# PyCountry will accept the full state name,
-	# but expects the ISO code in the format of US-FL
-	if address_state in states:
-		shipping_state = address_state
+			states = pycountry.subdivisions.get(country_code=country_code.upper())
+			states = [state.code.split('-')[1] for state in states]  # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
+
+			if address_state in states:
+				return address_state
+			else:
+				error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
+
+				frappe.throw(_(error_message.format(address_state)))
 	else:
-		try:
-			lookup_state = pycountry.subdivisions.lookup(address_state)
-		except LookupError:
-			error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
-
-			frappe.throw(_(error_message.format(address_state)))
-		else:
-			shipping_state = lookup_state.code.split('-')[1]
-
-	return shipping_state
+		return lookup_state.code.split('-')[1]

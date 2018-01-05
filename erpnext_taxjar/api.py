@@ -209,7 +209,7 @@ def validate_state(address):
 	except LookupError:
 		# If search fails, try again if the given state is an ISO code
 		if len(address_state) in range(1, 4):
-			country_code = get_country_code(address.get("country"))
+			country_code = frappe.db.get_value("Country", address.get("country"), "code")
 
 			states = pycountry.subdivisions.get(country_code=country_code.upper())
 			states = [state.code.split('-')[1] for state in states]  # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)

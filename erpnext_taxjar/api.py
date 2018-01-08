@@ -73,8 +73,8 @@ def set_sales_tax(doc, method):
 def create_transaction(doc, method):
 	# Allow skipping creation of transaction for dev environment
 	# if taxjar_create_transactions isn't defined in site_config we assume
-	# we DO want to create transactions all the time.
-	if not frappe.local.conf.get("taxjar_create_transactions", 1):
+	# we DO NOT want to create transactions all the time, except on production.
+	if not frappe.local.conf.get("taxjar_create_transactions", 0):
 		return
 
 	client = get_client()

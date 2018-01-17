@@ -177,8 +177,6 @@ def set_sales_tax(doc, method):
 
 def validate_address(doc, address):
 	# Validate address using PyCountry
-	validate_state(address)
-
 	tax_dict = get_tax_data(doc)
 
 	if tax_dict:
@@ -198,6 +196,9 @@ def validate_tax_request(tax_dict):
 
 
 def validate_state(address):
+	if not address:
+		return
+
 	if not address.get("state"):
 		return
 

@@ -16,19 +16,22 @@ app_license = "MIT"
 
 
 doc_events = {
-	"Quotation" : {
+	"Quotation": {
 		"validate": "erpnext_taxjar.api.set_sales_tax"
 	},
-	"Sales Order" : {
-		"validate" : "erpnext_taxjar.api.set_sales_tax"
+	"Sales Order": {
+		"validate": "erpnext_taxjar.api.set_sales_tax"
 	},
-    "Sales Invoice" : {
-		"validate" : "erpnext_taxjar.api.set_sales_tax",
-		"on_submit" : "erpnext_taxjar.api.create_transaction",
-		"on_cancel" : "erpnext_taxjar.api.delete_transaction"
+	"Sales Invoice": {
+		"validate": "erpnext_taxjar.api.set_sales_tax",
+		"on_submit": "erpnext_taxjar.api.create_transaction",
+		"on_cancel": "erpnext_taxjar.api.delete_transaction"
 	}
 }
 
+awc_address_validation = [
+	"erpnext_taxjar.api.validate_address"
+]
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/erpnext_taxjar/css/erpnext_taxjar.css"

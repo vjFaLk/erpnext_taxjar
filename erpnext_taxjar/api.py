@@ -141,11 +141,9 @@ def set_sales_tax(doc, method):
 
 	tax_account_head = frappe.db.get_single_value("TaxJar Settings", "tax_account_head")
 	tax_dict = get_tax_data(doc)
-	tax_data = None
 
-	if tax_dict:
-		tax_data = validate_tax_request(tax_dict)
-	else:
+	tax_data = validate_tax_request(tax_dict)
+	if not tax_data.amount_to_collect:
 		taxes_list = []
 
 		for tax in doc.taxes:

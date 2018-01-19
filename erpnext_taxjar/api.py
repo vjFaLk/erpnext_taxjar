@@ -7,6 +7,8 @@ import frappe
 from erpnext import get_default_company
 from frappe import _
 from frappe.contacts.doctype.address.address import get_company_address
+from frappe.utils import cint
+
 
 def create_transaction(doc, method):
 	# Allow skipping creation of transaction for dev environment
@@ -193,7 +195,6 @@ def validate_tax_request(tax_dict):
 
 
 def validate_state(address):
-
 	if not address:
 		return
 
@@ -208,14 +209,14 @@ def validate_state(address):
 	state = address.get("state").upper().strip()
 	address_state = (country_code + "-" + state).upper()
 
-	is_int = frappe.utils.cint(state)
-	error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
+	error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state.""".format(address.get("state"))
+	is_int = cint(state)
 
 	if is_int:
-		frappe.throw(_(error_message.format(state)))
+		frappe.throw(_(error_message))
 
-	# TODO: this only tests for US based two letter states
-	#       rework to handle other countries? maybe?
+	# TODO: this only tests for US-based two-letter states
+	#		rework to handle other countries? maybe?
 	if len(state) > 2:
 		address_state = state
 
@@ -230,7 +231,7 @@ def validate_state(address):
 
 			if address_state in states:
 				return address.get("state")
-			else:
-				frappe.throw(_(error_message.format(address.get("state"))))
+
+		frappe.throw(_(error_message))
 	else:
 		return lookup_state.code.split('-')[1]

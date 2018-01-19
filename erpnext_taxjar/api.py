@@ -8,7 +8,6 @@ from erpnext import get_default_company
 from frappe import _
 from frappe.contacts.doctype.address.address import get_company_address
 
-
 def create_transaction(doc, method):
 	# Allow skipping creation of transaction for dev environment
 	# if taxjar_create_transactions isn't defined in site_config we assume
@@ -194,30 +193,44 @@ def validate_tax_request(tax_dict):
 
 
 def validate_state(address):
+
 	if not address:
 		return
 
 	if not address.get("state"):
 		return
 
-	address_state = address.get("state").upper()
+	country_code = frappe.db.get_value("Country", address.get("country"), "code")
+
+	if country_code != "us":
+		return
+
+	state = address.get("state").upper().strip()
+	address_state = (country_code + "-" + state).upper()
+
+	is_int = frappe.utils.cint(state)
+	error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
+
+	if is_int:
+		frappe.throw(_(error_message.format(state)))
+
+	# TODO: this only tests for US based two letter states
+	#       rework to handle other countries? maybe?
+	if len(state) > 2:
+		address_state = state
 
 	# Search the given state in PyCountry's database
 	try:
 		lookup_state = pycountry.subdivisions.lookup(address_state)
 	except LookupError:
 		# If search fails, try again if the given state is an ISO code
-		if len(address_state) in range(1, 4):
-			country_code = frappe.db.get_value("Country", address.get("country"), "code")
-
+		if len(address_state) in range(3, 6):
 			states = pycountry.subdivisions.get(country_code=country_code.upper())
-			states = [state.code.split('-')[1] for state in states]  # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
+			states = [state.code for state in states]  # PyCountry returns state code as {country_code}-{state-code} (e.g. US-FL)
 
 			if address_state in states:
-				return address_state
+				return address.get("state")
 			else:
-				error_message = """{} is not a valid state! Check for typos or enter the ISO code for your state."""
-
-				frappe.throw(_(error_message.format(address_state)))
+				frappe.throw(_(error_message.format(address.get("state"))))
 	else:
 		return lookup_state.code.split('-')[1]
